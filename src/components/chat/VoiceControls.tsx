@@ -126,7 +126,7 @@ interface VoiceSpeakerButtonProps {
 }
 
 export const VoiceSpeakerButton: React.FC<VoiceSpeakerButtonProps> = ({ textToRead }) => {
-  const { currentLanguage, selectedVoiceURI } = useLanguage();
+  const { currentLanguage, voiceGender } = useLanguage();
   const [speaking, setSpeaking] = useState(false);
   const [paused, setPaused] = useState(false);
   const [fallbackWarning, setFallbackWarning] = useState<string | null>(null);
