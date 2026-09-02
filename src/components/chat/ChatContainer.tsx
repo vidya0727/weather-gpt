@@ -107,7 +107,11 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
 
       // Auto-Speak if enabled (Requirement: Default OFF, auto-speaks when ON)
       if (autoSpeak && pipelineRes.explanationText) {
-        textToSpeechService.speak(pipelineRes.explanationText, currentLanguage, selectedVoiceURI);
+        textToSpeechService.speak(
+  pipelineRes.explanationText,
+  currentLanguage,
+  voiceGender
+);
       }
     } catch (err: any) {
       console.error('Failed to process weather query:', err);
