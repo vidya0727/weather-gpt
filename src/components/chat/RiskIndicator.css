@@ -1,0 +1,62 @@
+.risk-indicator-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  background: rgba(10, 15, 26, 0.6);
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.risk-indicator-top {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.risk-indicator-label {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.risk-score-pill {
+  font-size: 0.72rem;
+  font-weight: 700;
+  margin-left: auto;
+  opacity: 0.85;
+}
+
+.risk-meter-bar {
+  height: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.risk-meter-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.4s ease;
+}
+
+.risk-low {
+  border-color: rgba(16, 185, 129, 0.3);
+  color: var(--status-low);
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.risk-moderate {
+  border-color: rgba(245, 158, 11, 0.3);
+  color: var(--status-moderate);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.risk-high {
+  border-color: rgba(239, 68, 68, 0.3);
+  color: var(--status-severe);
+  background: rgba(239, 68, 68, 0.08);
+}

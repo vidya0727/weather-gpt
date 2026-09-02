@@ -1,0 +1,113 @@
+.dual-location-wrapper {
+  padding: 1.5rem;
+  border-radius: 16px;
+  margin-top: 1.5rem;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dual-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+}
+
+.dual-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 0.3rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dual-subtitle {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.dual-summary-banner {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  color: #6ee7b7;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.side-by-side-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 1rem;
+}
+
+.city-card {
+  padding: 1.2rem;
+  border-radius: 14px;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.city-card.primary {
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.city-card.secondary {
+  border-color: rgba(168, 85, 247, 0.3);
+}
+
+.city-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 0.75rem;
+}
+
+.city-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+  color: #e2e8f0;
+  margin-bottom: 0.4rem;
+}
+
+.city-baseline {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  margin-top: 0.6rem;
+  padding-top: 0.5rem;
+  border-top: 1px stroke rgba(255, 255, 255, 0.05);
+}
+
+.vs-divider {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.08);
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 640px) {
+  .side-by-side-grid {
+    grid-template-columns: 1fr;
+  }
+  .vs-divider {
+    margin: 0 auto;
+  }
+}
