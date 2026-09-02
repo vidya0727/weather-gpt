@@ -218,9 +218,7 @@ export const HomePage: React.FC = () => {
           <section className="home-section-box">
             <DecisionCard
               initialLocation={context?.location}
-              {/* onAnalyze={(activity, location) => {
-                loadHomeData(location);
-              }}*/}
+              
               isLoading={loading}
             />
           </section>
