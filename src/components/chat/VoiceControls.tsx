@@ -151,7 +151,7 @@ export const VoiceSpeakerButton: React.FC<VoiceSpeakerButtonProps> = ({ textToRe
     textToSpeechService.speak(
       textToRead,
       currentLanguage,
-      selectedVoiceURI,
+      voiceGender,
       () => {
         setSpeaking(false);
         setPaused(false);
