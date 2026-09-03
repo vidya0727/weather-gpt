@@ -29,6 +29,9 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
   onRefreshWeather
 }) => {
   const { currentLanguage, autoSpeak, voiceGender, t } = useLanguage();
+  const [translatedMessages, setTranslatedMessages] = useState<
+  Record<string, string>
+>({});
   const activeLangConfig = SUPPORTED_LANGUAGES[currentLanguage];
 
   const [messages, setMessages] = useState<MessageItem[]>([]);
