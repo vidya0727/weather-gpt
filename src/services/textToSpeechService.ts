@@ -1,9 +1,11 @@
 import { SupportedLanguageCode } from '../config/languageConfig';
 
 /**
- * MULTILINGUAL TEXT-TO-SPEECH SERVICE
+ * WeatherGPT Multilingual Text-to-Speech Service
  *
- * Supports:
+ * Uses the WeatherGPT FastAPI backend.
+ *
+ * Supported languages:
  * English
  * Telugu
  * Hindi
@@ -11,267 +13,97 @@ import { SupportedLanguageCode } from '../config/languageConfig';
  * Kannada
  * Malayalam
  *
- * Supports:
- * Female / Male voice preference
- *
- * Uses the browser/device Speech Synthesis API.
+ * Supported voices:
+ * Female
+ * Male
  */
 
-const TTS_LOCALES: Record<
-  SupportedLanguageCode,
-  string[]
-> = {
-  en: ['en-IN', 'en-US', 'en-GB', 'en'],
-  te: ['te-IN', 'te'],
-  ta: ['ta-IN', 'ta'],
-  hi: ['hi-IN', 'hi'],
-  kn: ['kn-IN', 'kn'],
-  ml: ['ml-IN', 'ml']
-};
-
-
-/*
- * Keywords used to identify voices.
- *
- * IMPORTANT:
- * Browser voice names are different on
- * Windows, Android, Chrome, Edge, etc.
- *
- * Therefore we use multiple keywords and
- * fall back to the first matching language
- * voice if a gender-specific voice cannot
- * be identified.
- */
-const FEMALE_VOICE_KEYWORDS = [
-  'female',
-  'woman',
-  'zira',
-  'susan',
-  'hazel',
-  'samantha',
-  'heera',
-  'priya',
-  'kavya',
-  'swara',
-  'veena',
-  'neerja',
-  'google telugu female',
-  'google hindi female',
-  'google tamil female',
-  'google kannada female',
-  'google malayalam female'
-];
-
-
-const MALE_VOICE_KEYWORDS = [
-  'male',
-  'man',
-  'david',
-  'mark',
-  'ravi',
-  'mohan',
-  'prabhat',
-  'hemant',
-  'google telugu male',
-  'google hindi male',
-  'google tamil male',
-  'google kannada male',
-  'google malayalam male'
-];
+const TTS_BACKEND_URL =
+  'https://weather-gpt-voice.onrender.com';
 
 
 class TextToSpeechService {
 
-  private synth:
-    SpeechSynthesis | null = null;
+  private audio: HTMLAudioElement | null = null;
+
+  private audioUrl: string | null = null;
 
 
-  constructor() {
-
-    if (
-      typeof window !== 'undefined' &&
-      'speechSynthesis' in window
-    ) {
-
-      this.synth =
-        window.speechSynthesis;
-    }
-  }
-
-
+  /**
+   * Check whether audio playback is supported.
+   */
   public isSupported(): boolean {
 
-    return !!this.synth;
+    return (
+      typeof window !== 'undefined' &&
+      typeof Audio !== 'undefined'
+    );
   }
 
 
+  /**
+   * Check whether audio is currently playing.
+   */
   public isSpeaking(): boolean {
 
     return (
-      !!this.synth &&
-      this.synth.speaking &&
-      !this.synth.paused
+      this.audio !== null &&
+      !this.audio.paused &&
+      !this.audio.ended
     );
   }
 
 
+  /**
+   * Check whether audio is paused.
+   */
   public isPaused(): boolean {
 
     return (
-      !!this.synth &&
-      this.synth.paused
+      this.audio !== null &&
+      this.audio.paused &&
+      !this.audio.ended
     );
   }
 
 
-  /*
-   * Return all voices available
-   * on the user's device/browser.
+  /**
+   * These methods are kept for compatibility
+   * with existing WeatherGPT code.
+   *
+   * Voice selection is now handled by the backend,
+   * so browser voices are no longer required.
    */
-  public getAllVoices():
-    SpeechSynthesisVoice[] {
+  public getAllVoices(): SpeechSynthesisVoice[] {
 
-    if (!this.synth) {
-      return [];
-    }
-
-    return this.synth.getVoices();
+    return [];
   }
 
 
-  /*
-   * Return voices matching the
-   * selected application language.
-   */
   public getVoicesForLanguage(
-    language: SupportedLanguageCode
+    _language: SupportedLanguageCode
   ): SpeechSynthesisVoice[] {
 
-    if (!this.synth) {
-      return [];
-    }
-
-
-    const all =
-      this.synth.getVoices();
-
-
-    const locales =
-      TTS_LOCALES[language] ||
-      [language];
-
-
-    return all.filter(
-      (voice) => {
-
-        const voiceLang =
-          voice.lang.toLowerCase();
-
-
-        return locales.some(
-          (locale) => {
-
-            const target =
-              locale.toLowerCase();
-
-
-            return (
-              voiceLang === target ||
-              voiceLang.startsWith(
-                language.toLowerCase()
-              )
-            );
-          }
-        );
-      }
-    );
+    return [];
   }
 
 
-  /*
-   * Check whether at least one
-   * voice exists for a language.
-   */
   public hasVoiceForLanguage(
-    language: SupportedLanguageCode
+    _language: SupportedLanguageCode
   ): boolean {
 
-    return (
-      this.getVoicesForLanguage(
-        language
-      ).length > 0
-    );
+    return true;
   }
 
 
-  /*
-   * Find the best voice based on:
-   *
-   * Language
-   * Female / Male preference
-   */
-  private findVoiceForGender(
-    voices: SpeechSynthesisVoice[],
-    gender: 'female' | 'male'
-  ): SpeechSynthesisVoice | undefined {
-
-    if (voices.length === 0) {
-      return undefined;
-    }
-
-
-    const keywords =
-      gender === 'female'
-        ? FEMALE_VOICE_KEYWORDS
-        : MALE_VOICE_KEYWORDS;
-
-
-    /*
-     * First try to find an explicit
-     * gender keyword in the voice name.
-     */
-    const genderVoice =
-      voices.find(
-        (voice) => {
-
-          const name =
-            voice.name.toLowerCase();
-
-
-          return keywords.some(
-            (keyword) =>
-              name.includes(
-                keyword.toLowerCase()
-              )
-          );
-        }
-      );
-
-
-    if (genderVoice) {
-      return genderVoice;
-    }
-
-
-    /*
-     * Some browsers expose voice
-     * names without "male/female".
-     *
-     * In that case use a sensible
-     * language-specific fallback.
-     */
-    return voices[0];
-  }
-
-
-  /*
-   * Speak text.
+  /**
+   * Speak text using the WeatherGPT FastAPI backend.
    *
    * gender:
    *   female
    *   male
    */
-  public speak(
+  public async speak(
     text: string,
 
     language: SupportedLanguageCode = 'en',
@@ -284,26 +116,14 @@ class TextToSpeechService {
       err: string
     ) => void,
 
-    onVoiceUnavailable?: (
+    _onVoiceUnavailable?: (
       lang: SupportedLanguageCode
     ) => void
-  ): void {
 
-    if (!this.isSupported()) {
-
-      if (onError) {
-
-        onError(
-          'Text-to-speech is not supported in this browser.'
-        );
-      }
-
-      return;
-    }
-
+  ): Promise<void> {
 
     /*
-     * Stop any existing speech.
+     * Stop any existing audio.
      */
     this.stop();
 
@@ -318,204 +138,268 @@ class TextToSpeechService {
 
 
     if (!cleanText) {
+
+      if (onEnd) {
+        onEnd();
+      }
+
       return;
     }
 
 
-    /*
-     * Get voices for selected language.
-     */
-    const availableVoices =
-      this.getVoicesForLanguage(
-        language
+    try {
+
+      console.log(
+        'WeatherGPT TTS request:',
+        {
+          language,
+          gender
+        }
       );
 
 
-    const hasVoice =
-      availableVoices.length > 0;
+      /*
+       * Send text to FastAPI backend.
+       */
+      const response =
+        await fetch(
+          `${TTS_BACKEND_URL}/tts`,
+          {
+            method: 'POST',
+
+            headers: {
+              'Content-Type':
+                'application/json'
+            },
+
+            body: JSON.stringify({
+              text: cleanText,
+              language,
+              gender
+            })
+          }
+        );
 
 
-    /*
-     * No voice available.
-     */
-    if (!hasVoice) {
+      /*
+       * Check backend response.
+       */
+      if (!response.ok) {
 
-      if (onVoiceUnavailable) {
-
-        onVoiceUnavailable(
-          language
+        throw new Error(
+          `TTS server error: ${response.status}`
         );
       }
+
+
+      /*
+       * Receive MP3 audio.
+       */
+      const audioBlob =
+        await response.blob();
+
+
+      if (
+        !audioBlob ||
+        audioBlob.size === 0
+      ) {
+
+        throw new Error(
+          'TTS server returned empty audio.'
+        );
+      }
+
+
+      /*
+       * Create temporary audio URL.
+       */
+      this.audioUrl =
+        URL.createObjectURL(
+          audioBlob
+        );
+
+
+      /*
+       * Create audio player.
+       */
+      this.audio =
+        new Audio(
+          this.audioUrl
+        );
+
+
+      this.audio.preload =
+        'auto';
+
+
+      /*
+       * Audio completed.
+       */
+      this.audio.onended =
+        () => {
+
+          this.cleanup();
+
+          if (onEnd) {
+            onEnd();
+          }
+        };
+
+
+      /*
+       * Audio playback error.
+       */
+      this.audio.onerror =
+        () => {
+
+          console.error(
+            'WeatherGPT audio playback error.'
+          );
+
+          this.cleanup();
+
+          if (onError) {
+
+            onError(
+              'Audio playback error.'
+            );
+          }
+        };
+
+
+      /*
+       * Start playback.
+       */
+      await this.audio.play();
+
+
+      console.log(
+        `WeatherGPT TTS playing: ${language} / ${gender}`
+      );
+
+    } catch (error) {
+
+      console.error(
+        'WeatherGPT TTS error:',
+        error
+      );
+
+
+      this.cleanup();
 
 
       if (onError) {
 
         onError(
-          `${language.toUpperCase()} voice is not available on this device.`
+          error instanceof Error
+            ? error.message
+            : 'Unable to play voice response.'
         );
       }
-
-
-      return;
     }
-
-
-    /*
-     * Create speech object.
-     */
-    const utterance =
-      new SpeechSynthesisUtterance(
-        cleanText
-      );
-
-
-    const targetLocales =
-      TTS_LOCALES[language] ||
-      ['en-IN'];
-
-
-    utterance.lang =
-      targetLocales[0];
-
-
-    /*
-     * Speech speed.
-     */
-    utterance.rate =
-      0.92;
-
-
-    /*
-     * Normal pitch.
-     */
-    utterance.pitch =
-      1.0;
-
-
-    /*
-     * Find Female / Male voice.
-     */
-    const matchedVoice =
-      this.findVoiceForGender(
-        availableVoices,
-        gender
-      );
-
-
-    if (matchedVoice) {
-
-      utterance.voice =
-        matchedVoice;
-
-
-      utterance.lang =
-        matchedVoice.lang;
-
-
-      console.log(
-        `TTS voice selected: ${matchedVoice.name} (${matchedVoice.lang})`
-      );
-
-      console.log(
-        `TTS gender preference: ${gender}`
-      );
-    }
-
-
-    /*
-     * Speech completed.
-     */
-    utterance.onend =
-      () => {
-
-        if (onEnd) {
-          onEnd();
-        }
-      };
-
-
-    /*
-     * Speech error.
-     */
-    utterance.onerror =
-      (event) => {
-
-        console.error(
-          'TTS error:',
-          event
-        );
-
-
-        if (onError) {
-
-          onError(
-            'Speech synthesis playback error.'
-          );
-        }
-      };
-
-
-    /*
-     * Start speaking.
-     */
-    this.synth!.speak(
-      utterance
-    );
   }
 
 
-  /*
-   * Pause speech.
+  /**
+   * Pause audio.
    */
   public pause(): void {
 
     if (
-      this.synth &&
-      this.synth.speaking &&
-      !this.synth.paused
+      this.audio &&
+      !this.audio.paused
     ) {
 
-      this.synth.pause();
+      this.audio.pause();
     }
   }
 
 
-  /*
-   * Resume speech.
+  /**
+   * Resume audio.
    */
-  public resume(): void {
+  public async resume(): Promise<void> {
 
     if (
-      this.synth &&
-      this.synth.paused
+      this.audio &&
+      this.audio.paused &&
+      !this.audio.ended
     ) {
 
-      this.synth.resume();
+      try {
+
+        await this.audio.play();
+
+      } catch (error) {
+
+        console.error(
+          'Unable to resume audio:',
+          error
+        );
+      }
     }
   }
 
 
-  /*
-   * Stop speech.
+  /**
+   * Stop audio.
    */
   public stop(): void {
 
-    if (
-      this.synth &&
-      (
-        this.synth.speaking ||
-        this.synth.paused
-      )
-    ) {
+    if (this.audio) {
 
-      this.synth.cancel();
+      this.audio.pause();
+
+      this.audio.currentTime = 0;
+
+      this.audio.onended = null;
+
+      this.audio.onerror = null;
+
+      this.audio = null;
+    }
+
+
+    if (this.audioUrl) {
+
+      URL.revokeObjectURL(
+        this.audioUrl
+      );
+
+      this.audioUrl = null;
     }
   }
 
 
-  /*
-   * Remove URLs and markdown
-   * before speaking.
+  /**
+   * Clean temporary audio resources.
+   */
+  private cleanup(): void {
+
+    if (this.audio) {
+
+      this.audio.onended = null;
+
+      this.audio.onerror = null;
+
+      this.audio = null;
+    }
+
+
+    if (this.audioUrl) {
+
+      URL.revokeObjectURL(
+        this.audioUrl
+      );
+
+      this.audioUrl = null;
+    }
+  }
+
+
+  /**
+   * Remove URLs and markdown before
+   * sending text to the TTS backend.
    */
   private sanitizeTextForSpeech(
     text: string
