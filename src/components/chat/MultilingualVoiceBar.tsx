@@ -55,9 +55,7 @@ export const MultilingualVoiceBar:
   const [
     availableVoices,
     setAvailableVoices
-  ] = useState<
-    SpeechSynthesisVoice[]
-  >([]);
+  ] = useState<SpeechSynthesisVoice[]>([]);
 
 
   const [
@@ -75,51 +73,44 @@ export const MultilingualVoiceBar:
   const [
     voiceUnavailableWarning,
     setVoiceUnavailableWarning
-  ] = useState<
-    string | null
-  >(null);
+  ] = useState<string | null>(null);
 
 
   /*
-   * Load voices when language changes.
+   * Load available voices.
    */
   useEffect(() => {
 
     const updateVoices = () => {
 
       const voices =
-        textToSpeechService
-          .getVoicesForLanguage(
-            currentLanguage
-          );
+        textToSpeechService.getVoicesForLanguage(
+          currentLanguage
+        );
 
       setAvailableVoices(voices);
 
 
       const hasVoice =
-        textToSpeechService
-          .hasVoiceForLanguage(
-            currentLanguage
-          );
+        textToSpeechService.hasVoiceForLanguage(
+          currentLanguage
+        );
 
 
       const langConfig =
-        SUPPORTED_LANGUAGES[
-          currentLanguage
-        ];
+        SUPPORTED_LANGUAGES[currentLanguage];
 
 
       if (!hasVoice) {
 
         setVoiceUnavailableWarning(
-          `${langConfig.displayName} text response ready. (${langConfig.displayName} voice playback is not available on this device).`
+          `${langConfig.displayName} voice playback is not available.`
         );
 
       } else {
 
-        setVoiceUnavailableWarning(
-          null
-        );
+        setVoiceUnavailableWarning(null);
+
       }
     };
 
@@ -128,352 +119,284 @@ export const MultilingualVoiceBar:
 
 
     if (
-      typeof window !==
-        'undefined' &&
-      'speechSynthesis' in
-        window
+      typeof window !== 'undefined' &&
+      'speechSynthesis' in window
     ) {
 
-      window.speechSynthesis
-        .onvoiceschanged =
-          updateVoices;
+      window.speechSynthesis.onvoiceschanged =
+        updateVoices;
+
     }
 
+
+    return () => {
+
+      if (
+        typeof window !== 'undefined' &&
+        'speechSynthesis' in window
+      ) {
+
+        window.speechSynthesis.onvoiceschanged =
+          null;
+
+      }
+
+    };
 
   }, [currentLanguage]);
 
 
   /*
-   * Language changed.
+   * Stop speech when language changes.
+   *
+   * IMPORTANT:
+   * The existing response is NOT submitted again.
+   * The parent response remains the same.
    */
   const handleLanguageChange = (
-    e: React.ChangeEvent<
-      HTMLSelectElement
-    >
+    e: React.ChangeEvent<HTMLSelectElement>
   ) => {
 
     const newLang =
-      e.target.value as
-        SupportedLanguageCode;
-
-
-    setLanguage(
-      newLang
-    );
+      e.target.value as SupportedLanguageCode;
 
 
     textToSpeechService.stop();
 
-
-    setIsPlaying(
-      false
-    );
-
-
-    setIsPaused(
-      false
-    );
-  };
-
-
-  /*
-   * Female / Male voice changed.
-   */
-  const handleVoiceGenderChange = (
-    e: React.ChangeEvent<
-      HTMLSelectElement
-    >
-  ) => {
-
-    setVoiceGender(
-      e.target.value as
-        'female' | 'male'
-    );
-
-    /*
-     * Stop current speech
-     * when changing voice.
-     */
-    textToSpeechService.stop();
-
-    setIsPlaying(
-      false
-    );
-
-    setIsPaused(
-      false
-    );
-  };
-
-
-  /*
-   * Listen button.
-   */
-  const handleListenClick = async () => {
-
-  if (!lastResponseText) {
-    return;
-  }
-
-  const langConfig =
-    SUPPORTED_LANGUAGES[currentLanguage];
-
-  const hasVoice =
-    textToSpeechService.hasVoiceForLanguage(
-      currentLanguage
-    );
-
-  if (!hasVoice) {
-    setVoiceUnavailableWarning(
-      `${langConfig.displayName} voice playback is not available.`
-    );
-    return;
-  }
-
-  setIsPlaying(true);
-  setIsPaused(false);
-  setVoiceUnavailableWarning(null);
-
-  try {
-
-    /*
-     * Translate the existing response first.
-     * The translated text is then sent to TTS.
-     */
-    const translatedText =
-      await translateExplanationText(
-        lastResponseText,
-        currentLanguage
-      );
-
-    console.log(
-      `Speaking response in ${currentLanguage}:`,
-      translatedText
-    );
-
-    textToSpeechService.speak(
-      translatedText,
-      currentLanguage,
-      voiceGender,
-
-      () => {
-        setIsPlaying(false);
-        setIsPaused(false);
-      },
-
-      (err) => {
-        console.warn(
-          'TTS error:',
-          err
-        );
-
-        setIsPlaying(false);
-        setIsPaused(false);
-      },
-
-      (unavailLang) => {
-
-        const langName =
-          SUPPORTED_LANGUAGES[
-            unavailLang
-          ].displayName;
-
-        setVoiceUnavailableWarning(
-          `${langName} voice playback is not available.`
-        );
-
-        setIsPlaying(false);
-        setIsPaused(false);
-      }
-    );
-
-  } catch (error) {
-
-    console.error(
-      'Translation before speech failed:',
-      error
-    );
 
     setIsPlaying(false);
     setIsPaused(false);
 
-    setVoiceUnavailableWarning(
-      `${langConfig.displayName} translation failed.`
-    );
-  }
-};
 
-    if (
-      !lastResponseText
-    ) {
+    setVoiceUnavailableWarning(null);
+
+
+    setLanguage(newLang);
+
+  };
+
+
+  /*
+   * Female / Male voice selection.
+   */
+  const handleVoiceGenderChange = (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+
+    const newGender =
+      e.target.value as 'female' | 'male';
+
+
+    textToSpeechService.stop();
+
+
+    setIsPlaying(false);
+    setIsPaused(false);
+
+
+    setVoiceGender(newGender);
+
+  };
+
+
+  /*
+   * Listen to the CURRENT response.
+   *
+   * The existing response is translated first.
+   * That translated text is exactly what goes
+   * to the TTS backend.
+   */
+  const handleListenClick = async () => {
+
+    if (!lastResponseText) {
       return;
     }
 
 
     const hasVoice =
-      textToSpeechService
-        .hasVoiceForLanguage(
+      textToSpeechService.hasVoiceForLanguage(
+        currentLanguage
+      );
+
+
+    const langConfig =
+      SUPPORTED_LANGUAGES[currentLanguage];
+
+
+    if (!hasVoice) {
+
+      setVoiceUnavailableWarning(
+        `${langConfig.displayName} voice playback is not available.`
+      );
+
+      return;
+
+    }
+
+
+    setIsPlaying(true);
+    setIsPaused(false);
+    setVoiceUnavailableWarning(null);
+
+
+    try {
+
+      /*
+       * English response -> selected language.
+       *
+       * Example:
+       *
+       * English -> Hindi
+       * English -> Tamil
+       * English -> Telugu
+       * English -> Kannada
+       * English -> Malayalam
+       */
+      const translatedText =
+        await translateExplanationText(
+          lastResponseText,
           currentLanguage
         );
 
 
-    const langConfig =
-      SUPPORTED_LANGUAGES[
+      if (!translatedText.trim()) {
+
+        throw new Error(
+          'Translated response is empty.'
+        );
+
+      }
+
+
+      console.log(
+        'WeatherGPT TTS language:',
         currentLanguage
-      ];
-
-
-    if (
-      !hasVoice
-    ) {
-
-      setVoiceUnavailableWarning(
-        `${langConfig.displayName} text response ready. (${langConfig.displayName} voice playback is not available on this device).`
       );
 
-      return;
+
+      console.log(
+        'WeatherGPT translated text:',
+        translatedText
+      );
+
+
+      textToSpeechService.speak(
+        translatedText,
+        currentLanguage,
+        voiceGender,
+
+        () => {
+
+          setIsPlaying(false);
+          setIsPaused(false);
+
+        },
+
+        (err) => {
+
+          console.warn(
+            'TTS error:',
+            err
+          );
+
+          setIsPlaying(false);
+          setIsPaused(false);
+
+        },
+
+        (unavailLang) => {
+
+          const langName =
+            SUPPORTED_LANGUAGES[
+              unavailLang
+            ].displayName;
+
+
+          setVoiceUnavailableWarning(
+            `${langName} voice playback is not available.`
+          );
+
+
+          setIsPlaying(false);
+          setIsPaused(false);
+
+        }
+      );
+
+
+    } catch (error) {
+
+      console.error(
+        'Translation before speech failed:',
+        error
+      );
+
+
+      setIsPlaying(false);
+      setIsPaused(false);
+
+
+      setVoiceUnavailableWarning(
+        `${langConfig.displayName} translation failed.`
+      );
+
     }
 
-
-    setIsPlaying(
-      true
-    );
-
-
-    setIsPaused(
-      false
-    );
-
-
-    /*
-     * Pass language
-     * and Female/Male preference.
-     */
-    textToSpeechService.speak(
-      lastResponseText,
-
-      currentLanguage,
-
-      voiceGender,
-
-      () => {
-
-        setIsPlaying(
-          false
-        );
-
-        setIsPaused(
-          false
-        );
-      },
-
-      (
-        err
-      ) => {
-
-        console.warn(
-          err
-        );
-
-        setIsPlaying(
-          false
-        );
-
-        setIsPaused(
-          false
-        );
-      },
-
-      (
-        unavailLang
-      ) => {
-
-        const langName =
-          SUPPORTED_LANGUAGES[
-            unavailLang
-          ].displayName;
-
-
-        setVoiceUnavailableWarning(
-          `${langName} text response ready. (${langName} voice playback is not available on this device).`
-        );
-      }
-    );
   };
 
 
-  const handlePauseClick =
-    () => {
+  /*
+   * Pause.
+   */
+  const handlePauseClick = () => {
 
     textToSpeechService.pause();
 
-    setIsPaused(
-      true
-    );
+    setIsPaused(true);
+
   };
 
 
-  const handleResumeClick =
-    () => {
+  /*
+   * Resume.
+   */
+  const handleResumeClick = () => {
 
     textToSpeechService.resume();
 
-    setIsPaused(
-      false
-    );
+    setIsPaused(false);
+
   };
 
 
-  const handleStopClick =
-    () => {
+  /*
+   * Stop.
+   */
+  const handleStopClick = () => {
 
     textToSpeechService.stop();
 
-    setIsPlaying(
-      false
-    );
+    setIsPlaying(false);
+    setIsPaused(false);
 
-    setIsPaused(
-      false
-    );
   };
 
 
   return (
 
-    <div
-      className="
-        multilingual-voice-bar
-        glass-card
-      "
-    >
+    <div className="multilingual-voice-bar glass-card">
 
-      <div
-        className="
-          voice-bar-top-row
-        "
-      >
+      <div className="voice-bar-top-row">
 
+        {/* Language */}
 
-        {/* Language Selector */}
+        <div className="control-group">
 
-        <div
-          className="
-            control-group
-          "
-        >
-
-          <label
-            className="
-              control-label
-            "
-          >
+          <label className="control-label">
 
             <Globe
               size={14}
-              className="
-                icon-cyan
-              "
+              className="icon-cyan"
             />
 
             Language:
@@ -482,84 +405,58 @@ export const MultilingualVoiceBar:
 
 
           <select
-            className="
-              voice-select-field
-            "
-
-            value={
-              currentLanguage
-            }
-
-            onChange={
-              handleLanguageChange
-            }
+            className="voice-select-field"
+            value={currentLanguage}
+            onChange={handleLanguageChange}
           >
 
-            {
-              (
-                Object.keys(
-                  SUPPORTED_LANGUAGES
-                ) as
-                  SupportedLanguageCode[]
-              ).map(
-                (
-                  code
-                ) => {
+            {(
+              Object.keys(
+                SUPPORTED_LANGUAGES
+              ) as SupportedLanguageCode[]
+            ).map((code) => {
 
-                  const lang =
-                    SUPPORTED_LANGUAGES[
-                      code
-                    ];
+              const lang =
+                SUPPORTED_LANGUAGES[code];
 
-                  return (
 
-                    <option
-                      key={code}
-                      value={code}
-                    >
+              return (
 
-                      {lang.flagEmoji}
+                <option
+                  key={code}
+                  value={code}
+                >
 
-                      {' '}
+                  {lang.flagEmoji}{' '}
 
-                      {lang.displayName}
+                  {lang.displayName}
 
-                      {' ('}
+                  {' ('}
 
-                      {lang.nativeName}
+                  {lang.nativeName}
 
-                      {')'}
+                  {')'}
 
-                    </option>
-                  );
-                }
-              )
-            }
+                </option>
+
+              );
+
+            })}
 
           </select>
 
         </div>
 
 
-        {/* Female / Male Selector */}
+        {/* Female / Male */}
 
-        <div
-          className="
-            control-group
-          "
-        >
+        <div className="control-group">
 
-          <label
-            className="
-              control-label
-            "
-          >
+          <label className="control-label">
 
             <Mic
               size={14}
-              className="
-                icon-violet
-              "
+              className="icon-violet"
             />
 
             Voice:
@@ -568,29 +465,16 @@ export const MultilingualVoiceBar:
 
 
           <select
-            className="
-              voice-select-field
-            "
-
-            value={
-              voiceGender
-            }
-
-            onChange={
-              handleVoiceGenderChange
-            }
+            className="voice-select-field"
+            value={voiceGender}
+            onChange={handleVoiceGenderChange}
           >
 
-            <option
-              value="female"
-            >
+            <option value="female">
               Female
             </option>
 
-
-            <option
-              value="male"
-            >
+            <option value="male">
               Male
             </option>
 
@@ -601,49 +485,26 @@ export const MultilingualVoiceBar:
 
         {/* Auto Speak */}
 
-        <div
-          className="
-            control-group
-            auto-speak-group
-          "
-        >
+        <div className="control-group auto-speak-group">
 
-          <span
-            className="
-              control-label
-            "
-          >
+          <span className="control-label">
             Auto Speak:
           </span>
 
 
           <button
             type="button"
-
             className={
-              `
-              btn-toggle-auto-speak
-              ${
-                autoSpeak
-                  ? 'active'
-                  : ''
-              }
-              `
+              `btn-toggle-auto-speak ${
+                autoSpeak ? 'active' : ''
+              }`
             }
-
-            onClick={
-              () =>
-                setAutoSpeak(
-                  !autoSpeak
-                )
+            onClick={() =>
+              setAutoSpeak(!autoSpeak)
             }
           >
 
-            {
-              autoSpeak
-                ? 'ON'
-                : 'OFF'
-            }
+            {autoSpeak ? 'ON' : 'OFF'}
 
           </button>
 
@@ -652,131 +513,94 @@ export const MultilingualVoiceBar:
       </div>
 
 
-      {/* Playback Controls */}
+      {/* Playback */}
 
-      <div
-        className="
-          voice-bar-playback-row
-        "
-      >
+      <div className="voice-bar-playback-row">
 
-        <div
-          className="
-            playback-btn-group
-          "
-        >
+        <div className="playback-btn-group">
 
+          {!isPlaying ? (
 
-          {
-            !isPlaying ? (
+            <button
+              type="button"
+              className="
+                btn
+                btn-primary
+                btn-sm
+                btn-playback
+              "
+              onClick={handleListenClick}
+              disabled={!lastResponseText}
+            >
 
-              <button
-                type="button"
+              <Volume2 size={15} />
 
-                className="
-                  btn
-                  btn-primary
-                  btn-sm
-                  btn-playback
-                "
+              <span>
+                🔊 Listen
+              </span>
 
-                onClick={
-                  handleListenClick
-                }
+            </button>
 
-                disabled={
-                  !lastResponseText
-                }
-              >
+          ) : isPaused ? (
 
-                <Volume2
-                  size={15}
-                />
+            <button
+              type="button"
+              className="
+                btn
+                btn-secondary
+                btn-sm
+                btn-playback
+              "
+              onClick={handleResumeClick}
+            >
 
-                <span>
-                  🔊 Listen
-                </span>
+              <Play
+                size={15}
+                className="icon-emerald"
+              />
 
-              </button>
+              <span>
+                ▶ Resume
+              </span>
 
-            ) : isPaused ? (
+            </button>
 
-              <button
-                type="button"
+          ) : (
 
-                className="
-                  btn
-                  btn-secondary
-                  btn-sm
-                  btn-playback
-                "
+            <button
+              type="button"
+              className="
+                btn
+                btn-secondary
+                btn-sm
+                btn-playback
+              "
+              onClick={handlePauseClick}
+            >
 
-                onClick={
-                  handleResumeClick
-                }
-              >
+              <Pause
+                size={15}
+                className="icon-amber"
+              />
 
-                <Play
-                  size={15}
-                  className="
-                    icon-emerald
-                  "
-                />
+              <span>
+                ⏸ Pause
+              </span>
 
-                <span>
-                  ▶ Resume
-                </span>
+            </button>
 
-              </button>
-
-            ) : (
-
-              <button
-                type="button"
-
-                className="
-                  btn
-                  btn-secondary
-                  btn-sm
-                  btn-playback
-                "
-
-                onClick={
-                  handlePauseClick
-                }
-              >
-
-                <Pause
-                  size={15}
-                  className="
-                    icon-amber
-                  "
-                />
-
-                <span>
-                  ⏸ Pause
-                </span>
-
-              </button>
-
-            )
-          }
+          )}
 
 
           <button
             type="button"
-
             className="
               btn
               btn-secondary
               btn-sm
               btn-playback
             "
-
-            onClick={
-              handleStopClick
-            }
-
+            onClick={handleStopClick}
             disabled={
               !isPlaying &&
               !isPaused
@@ -785,9 +609,7 @@ export const MultilingualVoiceBar:
 
             <Square
               size={14}
-              className="
-                icon-rose
-              "
+              className="icon-rose"
             />
 
             <span>
@@ -799,78 +621,57 @@ export const MultilingualVoiceBar:
         </div>
 
 
-        {
-          isPlaying &&
-          !isPaused && (
+        {isPlaying && !isPaused && (
 
-            <div
-              className="
-                voice-speaking-indicator
-              "
-            >
+          <div className="voice-speaking-indicator">
 
-              <span
-                className="
-                  speaking-wave
-                "
-              />
+            <span className="speaking-wave" />
 
-              <span>
+            <span>
 
-                AI Speaking response in
+              AI Speaking response in{' '}
 
-                {' '}
+              {
+                SUPPORTED_LANGUAGES[
+                  currentLanguage
+                ].displayName
+              }
 
-                {
-                  SUPPORTED_LANGUAGES[
-                    currentLanguage
-                  ].displayName
-                }
+              ...
 
-                ...
+            </span>
 
-              </span>
+          </div>
 
-            </div>
-          )
-        }
+        )}
 
       </div>
 
 
-      {/* Voice unavailable warning */}
+      {/* Warning */}
 
-      {
-        voiceUnavailableWarning && (
+      {voiceUnavailableWarning && (
 
-          <div
-            className="
-              voice-unavailable-toast
-            "
-          >
+        <div className="voice-unavailable-toast">
 
-            <AlertCircle
-              size={15}
+          <AlertCircle
+            size={15}
+            className="icon-amber"
+            style={{
+              flexShrink: 0
+            }}
+          />
 
-              className="
-                icon-amber
-              "
+          <span>
+            {voiceUnavailableWarning}
+          </span>
 
-              style={{
-                flexShrink: 0
-              }}
-            />
+        </div>
 
-            <span>
-              {
-                voiceUnavailableWarning
-              }
-            </span>
-
-          </div>
-        )
-      }
+      )}
 
     </div>
+
   );
+
 };
