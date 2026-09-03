@@ -23,6 +23,10 @@ import {
   textToSpeechService
 } from '../../services/textToSpeechService';
 
+import {
+  translateExplanationText
+} from '../../services/translationService';
+
 import './MultilingualVoiceBar.css';
 
 
