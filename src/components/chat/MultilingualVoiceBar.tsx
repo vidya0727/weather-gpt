@@ -209,8 +209,99 @@ export const MultilingualVoiceBar:
   /*
    * Listen button.
    */
-  const handleListenClick =
-    () => {
+  const handleListenClick = async () => {
+
+  if (!lastResponseText) {
+    return;
+  }
+
+  const langConfig =
+    SUPPORTED_LANGUAGES[currentLanguage];
+
+  const hasVoice =
+    textToSpeechService.hasVoiceForLanguage(
+      currentLanguage
+    );
+
+  if (!hasVoice) {
+    setVoiceUnavailableWarning(
+      `${langConfig.displayName} voice playback is not available.`
+    );
+    return;
+  }
+
+  setIsPlaying(true);
+  setIsPaused(false);
+  setVoiceUnavailableWarning(null);
+
+  try {
+
+    /*
+     * Translate the existing response first.
+     * The translated text is then sent to TTS.
+     */
+    const translatedText =
+      await translateExplanationText(
+        lastResponseText,
+        currentLanguage
+      );
+
+    console.log(
+      `Speaking response in ${currentLanguage}:`,
+      translatedText
+    );
+
+    textToSpeechService.speak(
+      translatedText,
+      currentLanguage,
+      voiceGender,
+
+      () => {
+        setIsPlaying(false);
+        setIsPaused(false);
+      },
+
+      (err) => {
+        console.warn(
+          'TTS error:',
+          err
+        );
+
+        setIsPlaying(false);
+        setIsPaused(false);
+      },
+
+      (unavailLang) => {
+
+        const langName =
+          SUPPORTED_LANGUAGES[
+            unavailLang
+          ].displayName;
+
+        setVoiceUnavailableWarning(
+          `${langName} voice playback is not available.`
+        );
+
+        setIsPlaying(false);
+        setIsPaused(false);
+      }
+    );
+
+  } catch (error) {
+
+    console.error(
+      'Translation before speech failed:',
+      error
+    );
+
+    setIsPlaying(false);
+    setIsPaused(false);
+
+    setVoiceUnavailableWarning(
+      `${langConfig.displayName} translation failed.`
+    );
+  }
+};
 
     if (
       !lastResponseText
